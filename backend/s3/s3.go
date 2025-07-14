@@ -5911,7 +5911,7 @@ func (o *Object) readMetaData(ctx context.Context) (err error) {
 func s3MetadataToMap(s3Meta map[string]string) map[string]string {
 	meta := make(map[string]string, len(s3Meta))
 	for k, v := range s3Meta {
-		meta[strings.ToLower(k)] = v
+		meta[strings.ToLower(k)] = strings.Clone(v)
 	}
 	return meta
 }
@@ -5954,14 +5954,14 @@ func (o *Object) setMetaData(resp *s3.HeadObjectOutput) {
 			o.lastModified = *resp.LastModified
 		}
 	}
-	o.mimeType = deref(resp.ContentType)
+	o.mimeType = strings.Clone(deref(resp.ContentType))
 
 	// Set system metadata
-	o.storageClass = (*string)(&resp.StorageClass)
-	o.cacheControl = resp.CacheControl
-	o.contentDisposition = resp.ContentDisposition
-	o.contentEncoding = resp.ContentEncoding
-	o.contentLanguage = resp.ContentLanguage
+	o.storageClass = stringClone(string(resp.StorageClass))
+	o.cacheControl = stringClonePointer(resp.CacheControl)
+	o.contentDisposition = stringClonePointer(resp.ContentDisposition)
+	o.contentEncoding = stringClonePointer(resp.ContentEncoding)
+	o.contentLanguage = stringClonePointer(resp.ContentLanguage)
 
 	// If decompressing then size and md5sum are unknown
 	if o.fs.opt.Decompress && deref(o.contentEncoding) == "gzip" {
